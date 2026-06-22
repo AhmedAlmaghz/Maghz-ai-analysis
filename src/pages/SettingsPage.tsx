@@ -18,6 +18,28 @@ export function SettingsPage() {
     });
   }, []);
   
+  // Auto-save profile on change (debounced)
+  useEffect(() => {
+    if (!profile) return;
+    const timer = setTimeout(() => {
+      saveProfile(profile).then(() => {
+        console.log('Profile auto-saved');
+      });
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [profile]);
+  
+  // Auto-save settings on change (debounced)
+  useEffect(() => {
+    if (!settings) return;
+    const timer = setTimeout(() => {
+      saveSettings(settings).then(() => {
+        console.log('Settings auto-saved');
+      });
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [settings]);
+  
   const handleSaveProfile = async () => {
     if (!profile) return;
     setSaving(true);
@@ -184,9 +206,16 @@ export function SettingsPage() {
             </p>
           </div>
           
+          <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/30 p-4">
+            <p className="text-sm text-emerald-300 flex items-center gap-2">
+              <Save className="h-4 w-4" />
+              <span>✓ المفتاح يُحفظ تلقائياً في المتصفح ولا يتم إرساله لأي خادم خارجي</span>
+            </p>
+          </div>
+          
           <div className="rounded-xl bg-amber-500/10 border border-amber-500/30 p-4">
             <p className="text-sm text-amber-300">
-              ⚠️ المفتاح يُحفظ محلياً في المتصفح فقط ولا يتم إرساله لأي خادم خارجي
+              ⚠️ المفتاح مرتبط بهذا المتصفح فقط. إذا غيّرت المتصفح، ستحتاج لإدخاله مرة أخرى
             </p>
           </div>
           
@@ -196,7 +225,7 @@ export function SettingsPage() {
             className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 px-6 py-3 font-semibold text-white shadow-xl disabled:opacity-50"
           >
             <Save className="h-5 w-5" />
-            {saving ? 'جاري الحفظ...' : 'حفظ الإعدادات'}
+            {saving ? 'جاري الحفظ...' : 'حفظ الآن'}
           </button>
         </div>
       )}

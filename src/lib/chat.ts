@@ -2,13 +2,20 @@ import type { ParsedData } from './dataParser';
 import { buildDataSummary } from './dataParser';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
+export type ChartTypeString =
+  | 'bar' | 'horizontal-bar' | 'line' | 'area' | 'pie' | 'donut'
+  | 'scatter' | 'bubble' | 'histogram' | 'radar' | 'treemap'
+  | 'funnel' | 'waterfall' | 'stacked-bar' | 'stacked-area'
+  | 'grouped-bar' | 'composed' | 'time-series';
+
 export interface ChatVisualization {
-  type: 'bar' | 'line' | 'pie' | 'area';
+  type: ChartTypeString;
   title: string;
   subtitle?: string;
   categoryColumn?: string;
   numericColumn?: string;
-  aggregation?: 'sum' | 'avg' | 'count';
+  secondNumericColumn?: string;
+  aggregation?: 'sum' | 'avg' | 'count' | 'min' | 'max';
   topN?: number;
 }
 
@@ -50,7 +57,7 @@ export async function chatWithData(
         .join('\n')}\n`
     : '';
 
-  const prompt = `أنت محلل بيانات ذكي وخبير ذكاء أعمال محترف. لديك إمكانية إنشاء تصورات بيانية واقتراح أسئلة متابعة ذكية.
+  const prompt = `أنت محلل بيانات ذكي وخبير ذكاء أعمال محترف. لديك إمكانية إنشاء تصورات بيانية احترافية من أنواع متعددة، واقتراح أسئلة متابعة ذكية.
 
 البيانات المتاحة:
 ${dataSummary}
@@ -60,19 +67,66 @@ ${availableColumns}
 ${historyContext}
 السؤال/الطلب الحالي: ${question}
 
-تعليمات مهمة:
+## أنواع التصورات المتاحة (اختر الأنسب حسب البيانات والسؤال):
+
+### المخططات الأساسية:
+- "bar" - أعمدة رأسية: لمقارنة القيم بين الفئات (2-15 فئة)
+- "horizontal-bar" - أعمدة أفقية: للأسماء الطويلة أو >10 فئات
+- "line" - خطي: لعرض الاتجاهات والتطور (≥3 نقاط)
+- "area" - مساحة: لعرض الحجم الكلي والتغيرات
+- "pie" - دائري: للنسب المئوية (2-7 فئات فقط)
+- "donut" - حلقي: بديل عصري للدائري مع عرض المجموع في المنتصف
+
+### المخططات الإحصائية:
+- "scatter" - نقاط مبعثرة: لإظهار العلاقة بين عمودين رقميين
+- "bubble" - فقاعات: لثلاثة أبعاد من البيانات
+- "histogram" - تكراري: لعرض توزيع قيم عمود رقمي واحد
+
+### المخططات المتقدمة:
+- "radar" - عنكبوتي: لمقارنة متعددة الأبعاد (3-8 محاور)
+- "treemap" - شجري: لعرض البيانات الهرمية كأحجام نسبية
+- "funnel" - قمعي: لعرض مراحل العملية والتحويل
+- "waterfall" - شلال: لعرض التأثيرات التراكمية (ربح/خسارة)
+- "stacked-bar" - أعمدة مكدسة: لمقارنة التركيب الداخلي
+- "grouped-bar" - أعمدة مجمعة: لمقارنة مجموعات متعددة جنباً إلى جنب
+- "stacked-area" - مساحة مكدسة: للتراكم عبر الزمن
+- "composed" - مركب: دمج أعمدة وخطوط في مخطط واحد
+
+### للسلاسل الزمنية:
+- "time-series" - سلسلة زمنية: للبيانات مع عمود تاريخ
+
+## قواعد اختيار المخطط الذكي:
+1. **للنسب والتوزيع** (2-7 فئات) → pie أو donut
+2. **للمقارنة والترتيب** → bar أو horizontal-bar
+3. **للاتجاهات عبر الزمن** → time-series أو line
+4. **للعلاقة بين متغيرين رقميين** → scatter
+5. **للبيانات الهرمية** → treemap
+6. **للمراحل/التحويل** → funnel
+7. **لمقارنة متعددة الأبعاد** → radar
+8. **للحجم والتراكم** → area أو stacked-area
+9. **للتوزيع التكراري** → histogram
+10. **إذا كان >10 فئات** → horizontal-bar بدلاً من bar
+
+## التعليمات:
 1. أجب عن السؤال بإجابة واضحة ومفيدة بالعربية
 2. استخدم الأرقام الفعلية من البيانات لدعم إجابتك
-3. إذا كان السؤال/الطلب يتضمن عرض بيانات أو مقارنة أو تحليل أو يحتاج رسم بياني، اقترح 1-2 تصورات بيانية مناسبة
-4. أنواع التصورات المتاحة: "bar" (أعمدة)، "line" (خطية)، "pie" (دائرية)، "area" (مساحة)
-5. aggregation: "sum" (مجموع)، "avg" (متوسط)، "count" (عدد)
-6. type "pie" و "bar" يستخدمان categoryColumn فقط (لإظهار التوزيع)
-7. type "line" و "area" يستخدمان عادة categoryColumn للعمود الزمني أو الفئوي و numericColumn للقيم
-8. لا تقترح تصورات بأعمدة غير موجودة في البيانات
-9. إذا كان السؤال نظرياً بسيطاً لا يحتاج رسم، أرسل visualizations كمصفوفة فارغة
-10. اقترح 3-4 أسئلة متابعة ذكية ومختصرة مرتبطة بسياق السؤال والإجابة والأعمدة المتاحة
-11. الأسئلة المقترحة يجب أن تكون عملية ومفيدة للمستخدم لاستكشاف البيانات بشكل أعمق
-12. تنوع الأسئلة: بعضها تحليلي، بعضها تصوري، بعضها استكشافي
+3. إذا كان السؤال يتضمن عرض بيانات أو مقارنة أو تحليل، اقترح 1-2 تصورات بيانية
+4. **اختر نوع المخطط الأنسب** بناءً على قواعد الاختيار أعلاه وطبيعة البيانات
+5. aggregation: "sum" (مجموع)، "avg" (متوسط)، "count" (عدد)، "min" (أدنى)، "max" (أعلى)
+6. لا تقترح تصورات بأعمدة غير موجودة في البيانات
+7. إذا كان السؤال نظرياً بسيطاً لا يحتاج رسم، أرسل visualizations كمصفوفة فارغة
+8. **اقترح 3-4 أسئلة متابعة ذكية ومخصصة للبيانات الحالية**:
+   - **مهم جداً**: استخدم أسماء الأعمدة الفعلية المذكورة أعلاه في كل اقتراح
+   - كل اقتراح يجب أن يكون قابلاً للتنفيذ مباشرة على هذه البيانات المحددة
+   - استكشف علاقات أو أنماط أو مقارنات لم تُناقش بعد
+   - اجعل الاقتراحات قصيرة ومباشرة (8-15 كلمة)
+   - بعض الاقتراحات يجب أن تطلب تصورات بيانية محددة
+9. تنوع الأسئلة المقترحة:
+   - تحليلي: "ما الفرق بين X و Y في عمود Z؟"
+   - تصوري: "ارسم توزيع X حسب Y"
+   - استكشافي: "ما العلاقة بين X و Y؟"
+   - ترتيب: "ما أفضل 5 قيم في X؟"
+10. اطلب المخطط الذي يعرض الإجابة بأفضل طريقة بصرية
 
 أرجع JSON فقط بدون markdown بالشكل التالي:
 {
@@ -81,7 +135,7 @@ ${historyContext}
     {
       "type": "bar",
       "title": "عنوان الرسم بالعربية",
-      "subtitle": "وصف مختصر",
+      "subtitle": "وصف مختصر يوضح ما يظهره المخطط",
       "categoryColumn": "اسم العمود الفئوي الموجود",
       "numericColumn": "اسم العمود الرقمي الموجود أو فارغ",
       "aggregation": "sum",
@@ -108,8 +162,13 @@ ${historyContext}
     const parsed = JSON.parse(jsonMatch[0]);
 
     // Validate and sanitize visualizations
-    const validTypes = ['bar', 'line', 'pie', 'area'];
-    const validAggs = ['sum', 'avg', 'count'];
+    const validTypes = [
+      'bar', 'horizontal-bar', 'line', 'area', 'pie', 'donut',
+      'scatter', 'bubble', 'histogram', 'radar', 'treemap',
+      'funnel', 'waterfall', 'stacked-bar', 'stacked-area',
+      'grouped-bar', 'composed', 'time-series',
+    ];
+    const validAggs = ['sum', 'avg', 'count', 'min', 'max'];
     const columnNames = data.columns.map((c) => c.name);
 
     const visualizations: ChatVisualization[] = (parsed.visualizations || [])

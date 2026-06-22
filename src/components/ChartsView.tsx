@@ -1,346 +1,308 @@
 import { useState, useMemo } from 'react';
-import {
-  BarChart,
-  Bar,
-  LineChart,
-  Line,
-  PieChart,
-  Pie,
-  Cell,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  Area,
-  AreaChart,
-} from 'recharts';
-import { TrendingUp, BarChart3, PieChart as PieIcon } from 'lucide-react';
+import { BarChart3, Info, Wand2, AlertTriangle, Check } from 'lucide-react';
 import type { ParsedData } from '../lib/dataParser';
-import {
-  getTopCategories,
-  getNumericByCategory,
-  buildTimeSeries,
-  linearForecast,
-} from '../lib/dataParser';
+import { SmartChart } from './SmartChart';
+import { recommendCharts, CHART_METADATA, type ChartType } from '../lib/chartRecommendations';
+import { CHART_AXIS_CONFIGS, isColumnCompatible, getColumnWarning } from '../lib/chartAxisConfig';
 
 interface Props {
   data: ParsedData;
 }
 
-const COLORS = [
-  '#6366f1',
-  '#a855f7',
-  '#ec4899',
-  '#f59e0b',
-  '#10b981',
-  '#06b6d4',
-  '#ef4444',
-  '#8b5cf6',
-  '#f97316',
-  '#14b8a6',
-];
+type AggregationType = 'sum' | 'avg' | 'count' | 'min' | 'max';
 
 export function ChartsView({ data }: Props) {
-  const numericCols = data.columns.filter((c) => c.type === 'numeric');
-  const categoricalCols = data.columns.filter((c) => c.type === 'categorical');
-  const dateCols = data.columns.filter((c) => c.type === 'date');
-  
-  const [selectedNum, setSelectedNum] = useState(numericCols[0]?.name || '');
-  const [selectedCat, setSelectedCat] = useState(categoricalCols[0]?.name || '');
-  
-  const topCategories = useMemo(() => {
-    if (!selectedCat) return [];
-    return getTopCategories(data, selectedCat);
-  }, [data, selectedCat]);
-  
-  const numericByCategory = useMemo(() => {
-    if (!selectedCat || !selectedNum) return [];
-    return getNumericByCategory(data, selectedCat, selectedNum, 'sum');
-  }, [data, selectedCat, selectedNum]);
-  
-  const timeSeries = useMemo(() => {
-    if (!selectedNum || dateCols.length === 0) return [];
-    return buildTimeSeries(data, selectedNum);
-  }, [data, selectedNum, dateCols]);
-  
-  const forecastData = useMemo(() => {
-    if (timeSeries.length < 3) return [];
-    const values = timeSeries.map((d) => d.value);
-    const forecast = linearForecast(values, 3);
-    return [
-      ...timeSeries.map((d) => ({ name: d.name, actual: d.value, forecast: null as number | null })),
-      ...forecast.map((v, i) => ({
-        name: `+${i + 1}`,
-        actual: null as number | null,
-        forecast: v,
-      })),
-    ];
-  }, [timeSeries]);
-  
-  if (data.rows.length === 0) return null;
-  
+  const [selectedChartType, setSelectedChartType] = useState<ChartType>('bar');
+  const [axisSelections, setAxisSelections] = useState<Record<string, string>>({});
+  const [aggregation, setAggregation] = useState<AggregationType>('sum');
+
+  // Get axis configuration for current chart type
+  const axisConfig = CHART_AXIS_CONFIGS[selectedChartType];
+
+  // Initialize axis selections when chart type changes
+  useMemo(() => {
+    const newSelections: Record<string, string> = {};
+    
+    axisConfig.axes.forEach((axis) => {
+      // Try to find a column that matches the preferred type
+      const preferredCol = data.columns.find((c) => c.type === axis.preferredType);
+      const compatibleCol = data.columns.find((c) => isColumnCompatible(c.type, axis));
+      
+      if (preferredCol) {
+        newSelections[axis.id] = preferredCol.name;
+      } else if (compatibleCol && !axis.allowEmpty) {
+        newSelections[axis.id] = compatibleCol.name;
+      }
+    });
+    
+    setAxisSelections(newSelections);
+  }, [selectedChartType, data.columns, axisConfig.axes]);
+
+  // Get recommendations
+  const recommendations = useMemo(() => recommendCharts(data), [data]);
+
+  // Validate axis selections
+  const validation = useMemo(() => {
+    const warnings: { axis: string; message: string }[] = [];
+    const errors: { axis: string; message: string }[] = [];
+    
+    axisConfig.axes.forEach((axis) => {
+      const selectedCol = axisSelections[axis.id];
+      
+      if (axis.required && !selectedCol) {
+        errors.push({
+          axis: axis.id,
+          message: `${axis.labelAr} مطلوب`,
+        });
+        return;
+      }
+      
+      if (selectedCol) {
+        const col = data.columns.find((c) => c.name === selectedCol);
+        if (col) {
+          const warning = getColumnWarning(col.type, axis);
+          if (warning) {
+            warnings.push({
+              axis: axis.id,
+              message: warning,
+            });
+          }
+        }
+      }
+    });
+    
+    return { warnings, errors, isValid: errors.length === 0 };
+  }, [axisConfig, axisSelections, data.columns]);
+
+  // Handle axis selection change
+  const handleAxisChange = (axisId: string, columnName: string) => {
+    setAxisSelections((prev) => ({
+      ...prev,
+      [axisId]: columnName,
+    }));
+  };
+
+  // Get column type icon
+  const getColumnTypeIcon = (type: string) => {
+    switch (type) {
+      case 'numeric': return '🔢';
+      case 'categorical': return '🏷️';
+      case 'date': return '📅';
+      case 'text': return '📝';
+      default: return '📊';
+    }
+  };
+
   return (
-    <div className="space-y-6">
-      {/* Controls */}
+    <div className="space-y-5">
+      {/* Chart Type Selector */}
       <div className="glass rounded-2xl border border-white/20 p-5 shadow-xl">
         <div className="flex items-center gap-3 mb-4">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-pink-500 to-rose-600 shadow-lg">
             <BarChart3 className="h-5 w-5 text-white" />
           </div>
-          <div>
-            <h3 className="text-lg font-bold text-slate-900">التصورات البيانية</h3>
-            <p className="text-sm text-slate-500">اختر الأعمدة لتوليد الرسوم</p>
+          <div className="flex-1">
+            <h3 className="text-lg font-bold text-slate-900">نوع المخطط</h3>
+            <p className="text-xs text-slate-500">{CHART_METADATA[selectedChartType].description}</p>
           </div>
         </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-600">
-              العمود الرقمي
-            </label>
-            <select
-              value={selectedNum}
-              onChange={(e) => setSelectedNum(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-white/80 px-4 py-2.5 text-slate-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-            >
-              {numericCols.map((c) => (
-                <option key={c.name} value={c.name}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          
-          <div>
-            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-600">
-              العمود الفئوي
-            </label>
-            <select
-              value={selectedCat}
-              onChange={(e) => setSelectedCat(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-white/80 px-4 py-2.5 text-slate-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-            >
-              {categoricalCols.map((c) => (
-                <option key={c.name} value={c.name}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-      </div>
-      
-      {/* Charts Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Bar Chart: Top Categories */}
-        {topCategories.length > 0 && (
-          <ChartCard
-            title={`توزيع ${selectedCat}`}
-            subtitle={`أعلى ${topCategories.length} قيم`}
-            icon={<PieIcon className="h-5 w-5" />}
-            iconColor="from-purple-500 to-indigo-600"
-          >
-            <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={topCategories}>
-                <defs>
-                  <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#6366f1" />
-                    <stop offset="100%" stopColor="#a855f7" />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#64748b' }} />
-                <YAxis tick={{ fontSize: 11, fill: '#64748b' }} />
-                <Tooltip
-                  contentStyle={{
-                    background: 'rgba(255,255,255,0.95)',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '12px',
-                    boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
-                  }}
-                />
-                <Bar dataKey="value" fill="url(#barGradient)" radius={[8, 8, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </ChartCard>
-        )}
-        
-        {/* Pie Chart: Distribution */}
-        {topCategories.length > 0 && (
-          <ChartCard
-            title={`النسب المئوية - ${selectedCat}`}
-            subtitle="توزيع القيم"
-            icon={<PieIcon className="h-5 w-5" />}
-            iconColor="from-pink-500 to-rose-600"
-          >
-            <ResponsiveContainer width="100%" height={280}>
-              <PieChart>
-                <Pie
-                  data={topCategories}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={50}
-                  outerRadius={90}
-                  paddingAngle={3}
-                  dataKey="value"
-                  label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
-                  labelLine={false}
-                >
-                  {topCategories.map((_, i) => (
-                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{
-                    background: 'rgba(255,255,255,0.95)',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '12px',
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </ChartCard>
-        )}
-        
-        {/* Bar: Numeric by Category */}
-        {numericByCategory.length > 0 && (
-          <ChartCard
-            title={`${selectedNum} حسب ${selectedCat}`}
-            subtitle="إجمالي القيم"
-            icon={<BarChart3 className="h-5 w-5" />}
-            iconColor="from-emerald-500 to-teal-600"
-          >
-            <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={numericByCategory}>
-                <defs>
-                  <linearGradient id="barGradient2" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#10b981" />
-                    <stop offset="100%" stopColor="#06b6d4" />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#64748b' }} />
-                <YAxis tick={{ fontSize: 11, fill: '#64748b' }} />
-                <Tooltip
-                  contentStyle={{
-                    background: 'rgba(255,255,255,0.95)',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '12px',
-                  }}
-                />
-                <Bar dataKey="value" fill="url(#barGradient2)" radius={[8, 8, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </ChartCard>
-        )}
-        
-        {/* Time Series with Forecast */}
-        {timeSeries.length > 2 && (
-          <ChartCard
-            title={`الاتجاه الزمني - ${selectedNum}`}
-            subtitle={forecastData.length > timeSeries.length ? 'مع التنبؤ المستقبلي' : 'عبر الزمن'}
-            icon={<TrendingUp className="h-5 w-5" />}
-            iconColor="from-amber-500 to-orange-600"
-            wide
-          >
-            <ResponsiveContainer width="100%" height={300}>
-              {forecastData.length > timeSeries.length ? (
-                <LineChart data={forecastData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#64748b' }} />
-                  <YAxis tick={{ fontSize: 11, fill: '#64748b' }} />
-                  <Tooltip
-                    contentStyle={{
-                      background: 'rgba(255,255,255,0.95)',
-                      border: '1px solid #e2e8f0',
-                      borderRadius: '12px',
-                    }}
-                  />
-                  <Legend />
-                  <Line
-                    type="monotone"
-                    dataKey="actual"
-                    name="فعلي"
-                    stroke="#6366f1"
-                    strokeWidth={3}
-                    dot={{ fill: '#6366f1', r: 4 }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="forecast"
-                    name="تنبؤ"
-                    stroke="#ec4899"
-                    strokeWidth={3}
-                    strokeDasharray="5 5"
-                    dot={{ fill: '#ec4899', r: 4 }}
-                  />
-                </LineChart>
-              ) : (
-                <AreaChart data={timeSeries}>
-                  <defs>
-                    <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#6366f1" stopOpacity={0.4} />
-                      <stop offset="100%" stopColor="#6366f1" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#64748b' }} />
-                  <YAxis tick={{ fontSize: 11, fill: '#64748b' }} />
-                  <Tooltip
-                    contentStyle={{
-                      background: 'rgba(255,255,255,0.95)',
-                      border: '1px solid #e2e8f0',
-                      borderRadius: '12px',
-                    }}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="value"
-                    stroke="#6366f1"
-                    strokeWidth={3}
-                    fill="url(#areaGradient)"
-                  />
-                </AreaChart>
-              )}
-            </ResponsiveContainer>
-          </ChartCard>
-        )}
-      </div>
-    </div>
-  );
-}
 
-function ChartCard({
-  title,
-  subtitle,
-  icon,
-  iconColor,
-  children,
-  wide,
-}: {
-  title: string;
-  subtitle: string;
-  icon: React.ReactNode;
-  iconColor: string;
-  children: React.ReactNode;
-  wide?: boolean;
-}) {
-  return (
-    <div
-      className={`glass rounded-2xl border border-white/20 p-5 shadow-xl ${wide ? 'lg:col-span-2' : ''}`}
-    >
-      <div className="mb-4 flex items-center gap-3">
-        <div className={`flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br ${iconColor} shadow-lg text-white`}>
-          {icon}
+        <select
+          value={selectedChartType}
+          onChange={(e) => setSelectedChartType(e.target.value as ChartType)}
+          className="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium"
+        >
+          <optgroup label="📊 الأساسية">
+            {(['bar', 'horizontal-bar', 'line', 'area', 'pie', 'donut'] as ChartType[]).map((t) => (
+              <option key={t} value={t}>
+                {CHART_METADATA[t].icon} {CHART_METADATA[t].label}
+              </option>
+            ))}
+          </optgroup>
+          <optgroup label="📈 الإحصائية">
+            {(['scatter', 'bubble', 'histogram'] as ChartType[]).map((t) => (
+              <option key={t} value={t}>
+                {CHART_METADATA[t].icon} {CHART_METADATA[t].label}
+              </option>
+            ))}
+          </optgroup>
+          <optgroup label="🎨 المتقدمة">
+            {(['radar', 'treemap', 'funnel', 'waterfall', 'stacked-bar', 'grouped-bar'] as ChartType[]).map((t) => (
+              <option key={t} value={t}>
+                {CHART_METADATA[t].icon} {CHART_METADATA[t].label}
+              </option>
+            ))}
+          </optgroup>
+          <optgroup label="⏱️ الزمنية">
+            <option value="time-series">⏱️ سلسلة زمنية</option>
+          </optgroup>
+        </select>
+
+        {/* Quick Recommendations */}
+        {recommendations.length > 0 && (
+          <div className="mt-3 flex items-center gap-2 flex-wrap">
+            <span className="text-xs text-slate-500">مقترح:</span>
+            {recommendations.slice(0, 3).map((rec) => (
+              <button
+                key={rec.type}
+                onClick={() => setSelectedChartType(rec.type)}
+                className={`flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium transition-all ${
+                  selectedChartType === rec.type
+                    ? 'bg-indigo-100 text-indigo-700 border border-indigo-300'
+                    : 'bg-white text-slate-600 border border-slate-200 hover:border-indigo-300'
+                }`}
+              >
+                <span>{CHART_METADATA[rec.type].icon}</span>
+                <span>{CHART_METADATA[rec.type].label}</span>
+                <span className="rounded-full bg-indigo-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                  {Math.round(rec.confidence * 100)}%
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Axis Configuration */}
+      <div className="glass rounded-2xl border border-white/20 p-5 shadow-xl">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg">
+            <Wand2 className="h-5 w-5 text-white" />
+          </div>
+          <div className="flex-1">
+            <h3 className="text-lg font-bold text-slate-900">تخصيص المحاور</h3>
+            <p className="text-xs text-slate-500">اختر الأعمدة لكل محور بحرية</p>
+          </div>
         </div>
-        <div>
-          <h4 className="font-bold text-slate-900">{title}</h4>
-          <p className="text-xs text-slate-500">{subtitle}</p>
+
+        <div className="space-y-4">
+          {axisConfig.axes.map((axis) => {
+            const selectedCol = axisSelections[axis.id];
+            const selectedColInfo = data.columns.find((c) => c.name === selectedCol);
+            const warning = selectedColInfo ? getColumnWarning(selectedColInfo.type, axis) : null;
+            const error = validation.errors.find((e) => e.axis === axis.id);
+
+            return (
+              <div key={axis.id} className="space-y-2">
+                <label className="block text-sm font-semibold text-slate-700">
+                  {axis.labelAr}
+                  {axis.required && <span className="text-red-500 mr-1">*</span>}
+                  {!axis.required && <span className="text-slate-400 text-xs mr-2">(اختياري)</span>}
+                </label>
+                
+                <select
+                  value={selectedCol || ''}
+                  onChange={(e) => handleAxisChange(axis.id, e.target.value)}
+                  className={`w-full rounded-lg border px-4 py-2.5 text-sm transition-colors ${
+                    error
+                      ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20'
+                      : warning
+                      ? 'border-amber-300 bg-amber-50 focus:border-amber-500 focus:ring-amber-500/20'
+                      : 'border-slate-200 bg-white focus:border-indigo-500 focus:ring-indigo-500/20'
+                  } focus:outline-none focus:ring-2`}
+                >
+                  <option value="">اختر عموداً...</option>
+                  
+                  {/* Group columns by type */}
+                  {['numeric', 'categorical', 'date', 'text'].map((type) => {
+                    const cols = data.columns.filter((c) => c.type === type);
+                    if (cols.length === 0) return null;
+                    
+                    return (
+                      <optgroup key={type} label={`${getColumnTypeIcon(type)} ${type === 'numeric' ? 'أعمدة رقمية' : type === 'categorical' ? 'أعمدة فئوية' : type === 'date' ? 'أعمدة تاريخية' : 'أعمدة نصية'}`}>
+                        {cols.map((col) => {
+                          const compatible = isColumnCompatible(col.type, axis);
+                          return (
+                            <option key={col.name} value={col.name} disabled={!compatible}>
+                              {col.name} ({col.uniqueCount} قيمة) {!compatible && '⚠️'}
+                            </option>
+                          );
+                        })}
+                      </optgroup>
+                    );
+                  })}
+                </select>
+
+                {/* Axis Description */}
+                <p className="text-xs text-slate-500">{axis.description}</p>
+
+                {/* Warnings and Errors */}
+                {error && (
+                  <div className="flex items-start gap-2 rounded-lg bg-red-50 border border-red-200 p-2">
+                    <AlertTriangle className="h-4 w-4 text-red-500 shrink-0 mt-0.5" />
+                    <p className="text-xs text-red-700">{error.message}</p>
+                  </div>
+                )}
+                
+                {warning && !error && (
+                  <div className="flex items-start gap-2 rounded-lg bg-amber-50 border border-amber-200 p-2">
+                    <Info className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                    <p className="text-xs text-amber-700">{warning}</p>
+                  </div>
+                )}
+
+                {/* Success indicator */}
+                {selectedCol && !warning && !error && (
+                  <div className="flex items-center gap-1 text-xs text-emerald-600">
+                    <Check className="h-3 w-3" />
+                    <span>متوافق</span>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+
+          {/* Aggregation (if applicable) */}
+          {axisConfig.axes.some((a) => a.id === 'value' || a.id === 'barValue' || a.id === 'lineValue') && (
+            <div className="space-y-2 pt-4 border-t border-slate-200">
+              <label className="block text-sm font-semibold text-slate-700">
+                طريقة التجميع
+              </label>
+              <select
+                value={aggregation}
+                onChange={(e) => setAggregation(e.target.value as AggregationType)}
+                className="w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+              >
+                <option value="sum">➕ المجموع</option>
+                <option value="avg">📊 المتوسط</option>
+                <option value="count">🔢 العدد</option>
+                <option value="min">⬇️ الأدنى</option>
+                <option value="max">⬆️ الأعلى</option>
+              </select>
+            </div>
+          )}
         </div>
       </div>
-      {children}
+
+      {/* Chart Display */}
+      <div className="glass rounded-2xl border border-white/20 p-6 shadow-xl">
+        {validation.isValid ? (
+          <SmartChart
+            data={data}
+            chartType={selectedChartType}
+            axisSelections={axisSelections}
+            aggregation={aggregation}
+            height={450}
+          />
+        ) : (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <AlertTriangle className="h-16 w-16 text-amber-400 mb-4" />
+            <h3 className="text-lg font-bold text-slate-900 mb-2">
+              المحاور غير مكتملة
+            </h3>
+            <p className="text-sm text-slate-600 max-w-md">
+              الرجاء إكمال جميع المحاور المطلوبة لعرض المخطط
+            </p>
+            <div className="mt-4 space-y-1">
+              {validation.errors.map((err, i) => (
+                <p key={i} className="text-xs text-red-600">
+                  • {err.message}
+                </p>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

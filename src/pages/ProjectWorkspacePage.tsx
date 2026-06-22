@@ -69,7 +69,8 @@ export function ProjectWorkspacePage() {
           return;
         }
         setProject(proj);
-        setApiKey(settings.apiKey);
+        // Use API key from settings - this is the main source
+        setApiKey(settings.apiKey || '');
         setConnections(conns);
         setLoading(false);
       }
