@@ -142,7 +142,7 @@
 ```bash
 # 1. استنساخ المشروع
 git clone https://github.com/AhmedAlmaghz/Maghaz-ai-analysis.git
-cd ai-data-analyzer
+cd Maghaz-ai-analysis
 
 # 2. تثبيت المكتبات
 npm install
