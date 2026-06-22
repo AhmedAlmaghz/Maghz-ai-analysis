@@ -28,8 +28,8 @@
 
 ### 🐛 الإبلاغ عن مشكلة
 
-1. تحقق من [Issues](https://github.com/username/ai-data-analyzer/issues) الحالية
-2. إذا لم تجد المشكلة، [افتح Issue جديدة](https://github.com/username/ai-data-analyzer/issues/new)
+1. تحقق من [Issues](https://github.com/AhmedAlmaghz/Maghaz-ai-analysis/issues) الحالية
+2. إذا لم تجد المشكلة، [افتح Issue جديدة](https://github.com/AhmedAlmaghz/Maghaz-ai-analysis/issues/new)
 3. استخدم قالب المشكلة المناسب
 4. قدم أكبر قدر ممكن من التفاصيل:
    - وصف واضح للمشكلة
@@ -40,8 +40,8 @@
 
 ### ✨ اقتراح ميزة جديدة
 
-1. تحقق من [Issues](https://github.com/username/ai-data-analyzer/issues) الحالية
-2. [افتح Issue جديدة](https://github.com/username/ai-data-analyzer/issues/new?template=feature_request.md)
+1. تحقق من [Issues](https://github.com/AhmedAlmaghz/Maghaz-ai-analysis/issues) الحالية
+2. [افتح Issue جديدة](https://github.com/AhmedAlmaghz/Maghaz-ai-analysis/issues/new?template=feature_request.md)
 3. اشرح:
    - المشكلة التي تحلها الميزة
    - الحل المقترح
@@ -63,7 +63,7 @@
 
 ### المتطلبات الأساسية
 
-- **Node.js** 18 أو أحدث
+- **Node.js** 20 أو أحدث
 - **npm** أو **yarn** أو **pnpm**
 - **Git**
 - محرر كود (VS Code موصى به)
@@ -74,11 +74,11 @@
 # 1. Fork المشروع على GitHub
 
 # 2. Clone المشروع
-git clone https://github.com/yourusername/ai-data-analyzer.git
-cd ai-data-analyzer
+git clone https://github.com/AhmedAlmaghz/Maghaz-ai-analysis.git
+cd Maghaz-ai-analysis
 
 # 3. أضف الـ upstream
-git remote add upstream https://github.com/original/ai-data-analyzer.git
+git remote add upstream https://github.com/AhmedAlmaghz/Maghaz-ai-analysis.git
 
 # 4. ثبت المكتبات
 npm install
@@ -89,7 +89,7 @@ git checkout -b feature/my-amazing-feature
 # 6. شغل المشروع
 npm run dev
 
-# 7. افتح المتصفح على http://localhost:5173
+# 7. افتح المتصفح على http://localhost:3000
 ```
 
 ### VS Code Extensions الموصى بها
@@ -370,8 +370,8 @@ npm run dev
 إذا كان لديك أي أسئلة:
 
 1. راجع [README.md](README.md)
-2. ابحث في [Issues](https://github.com/username/ai-data-analyzer/issues)
-3. افتح [Issue جديدة](https://github.com/username/ai-data-analyzer/issues/new)
+2. ابحث في [Issues](https://github.com/AhmedAlmaghz/Maghaz-ai-analysis/issues)
+3. افتح [Issue جديدة](https://github.com/AhmedAlmaghz/Maghaz-ai-analysis/issues/new)
 
 ## 🙏 شكراً لك!
 
