@@ -134,14 +134,14 @@
 ## 🚀 التثبيت
 
 ### المتطلبات الأساسية
-- Node.js 18+ 
+- Node.js 20+ 
 - npm أو yarn أو pnpm
 
 ### خطوات التثبيت
 
 ```bash
 # 1. استنساخ المشروع
-git clone https://github.com/yourusername/ai-data-analyzer.git
+git clone https://github.com/AhmedAlmaghz/Maghaz-ai-analysis.git
 cd ai-data-analyzer
 
 # 2. تثبيت المكتبات
