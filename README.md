@@ -357,16 +357,16 @@ ai-data-analyzer/
 ## 📞 التواصل والدعم
 
 ### 👨‍💻 المطور
-- **الاسم**: [اسمك هنا]
-- **البريد**: [email@example.com]
-- **GitHub**: [@username](https://github.com/username)
-- **LinkedIn**: [Your LinkedIn](https://linkedin.com/in/username)
+- **الاسم**: [Ahmed Almaghz]
+- **البريد**: [AhmedAlmaghz@gmail.com]
+- **GitHub**: [@AhmedAlmaghz](https://github.com/AhmedAlmaghz)
+- **LinkedIn**: [Your LinkedIn](https://linkedin.com/in/Ahmed-Almaghz)
 
 ### 🐛 الإبلاغ عن مشكلة
-إذا وجدت مشكلة، يرجى [فتح Issue](https://github.com/username/ai-data-analyzer/issues)
+إذا وجدت مشكلة، يرجى [فتح Issue](https://github.com/AhmedAlmaghz/Maghaz-ai-analysis/issues)
 
 ### 💡 طلب ميزة جديدة
-لديك فكرة؟ [اقترح ميزة](https://github.com/username/ai-data-analyzer/issues/new?template=feature_request.md)
+لديك فكرة؟ [اقترح ميزة](https://github.com/AhmedAlmaghz/Maghaz-ai-analysis/issues/new?template=feature_request.md)
 
 ### ⭐ الدعم
 إذا أعجبك المشروع:
