@@ -16,6 +16,7 @@ import {
   BarChart3,
   Link as LinkIcon,
   AlertCircle,
+  FileText,
 } from 'lucide-react';
 import {
   getProject,
@@ -32,12 +33,18 @@ import type { ChatMessage } from '../lib/chat';
 import { DataTable } from '../components/DataTable';
 import { ChartsView } from '../components/ChartsView';
 import { InsightsPanel } from '../components/InsightsPanel';
+import { ReportModal } from '../components/ReportModal';
 import {
   exportAsJSON,
   exportDataAsCSV,
   exportChatAsText,
   exportAsPDF,
 } from '../lib/export';
+import {
+  exportAsPowerPoint,
+  exportAsPresentationPDF,
+  exportAsHTMLPresentation,
+} from '../lib/presentationExport';
 import { fetchDataFromConnection, testConnection } from '../lib/connections';
 
 type Tab = 'data' | 'analysis' | 'charts' | 'chat';
@@ -54,6 +61,7 @@ export function ProjectWorkspacePage() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showExport, setShowExport] = useState(false);
+  const [showReport, setShowReport] = useState(false);
   const [connections, setConnections] = useState<DBConnection[]>([]);
   const [dataInputMode, setDataInputMode] = useState<DataInputMode>('file');
   const [pastedData, setPastedData] = useState('');
@@ -208,6 +216,27 @@ export function ProjectWorkspacePage() {
         case 'pdf':
           await exportAsPDF('workspace-content', project.name);
           break;
+        case 'pptx':
+          if (!project.analysis) {
+            toast.warning('لا يوجد تحليل', 'يرجى إجراء التحليل أولاً');
+            return;
+          }
+          await exportAsPowerPoint(project);
+          break;
+        case 'presentation-pdf':
+          if (!project.analysis) {
+            toast.warning('لا يوجد تحليل', 'يرجى إجراء التحليل أولاً');
+            return;
+          }
+          await exportAsPresentationPDF(project);
+          break;
+        case 'presentation-html':
+          if (!project.analysis) {
+            toast.warning('لا يوجد تحليل', 'يرجى إجراء التحليل أولاً');
+            return;
+          }
+          exportAsHTMLPresentation(project);
+          break;
       }
       setShowExport(false);
       toast.success('تم التصدير بنجاح');
@@ -224,7 +253,23 @@ export function ProjectWorkspacePage() {
     );
   }
   
-  if (!project) return null;
+  if (!project) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+        <div className="rounded-full bg-red-500/10 p-6">
+          <AlertCircle className="h-12 w-12 text-red-500" />
+        </div>
+        <h2 className="text-xl font-bold text-white">المشروع غير موجود</h2>
+        <p className="text-slate-400">عذراً، لم نتمكن من العثور على هذا المشروع</p>
+        <Link
+          to="/projects"
+          className="rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 px-6 py-3 font-semibold text-white hover:shadow-lg transition-all"
+        >
+          العودة للمشاريع
+        </Link>
+      </div>
+    );
+  }
   
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: 'data', label: 'البيانات', icon: <DatabaseIcon className="h-4 w-4" /> },
@@ -306,12 +351,57 @@ export function ProjectWorkspacePage() {
                     <FileImage className="h-4 w-4 text-red-400" />
                     كصورة PDF
                   </button>
+                  
+                  {/* فاصل */}
+                  <div className="my-1 border-t border-white/10" />
+                  
+                  {/* عنوان العروض التقديمية */}
+                  <div className="px-4 py-1.5 text-xs font-semibold text-indigo-400">
+                    📽️ العروض التقديمية
+                  </div>
+                  
+                  <button
+                    onClick={() => handleExport('pptx')}
+                    disabled={!project.analysis}
+                    className="flex w-full items-center gap-2 px-4 py-2 text-sm text-slate-300 hover:bg-white/5 disabled:opacity-40"
+                  >
+                    <span className="text-lg">📊</span>
+                    PowerPoint (.pptx)
+                  </button>
+                  
+                  <button
+                    onClick={() => handleExport('presentation-pdf')}
+                    disabled={!project.analysis}
+                    className="flex w-full items-center gap-2 px-4 py-2 text-sm text-slate-300 hover:bg-white/5 disabled:opacity-40"
+                  >
+                    <span className="text-lg">📄</span>
+                    PDF عرض تقديمي
+                  </button>
+                  
+                  <button
+                    onClick={() => handleExport('presentation-html')}
+                    disabled={!project.analysis}
+                    className="flex w-full items-center gap-2 px-4 py-2 text-sm text-slate-300 hover:bg-white/5 disabled:opacity-40"
+                  >
+                    <span className="text-lg">🌐</span>
+                    HTML تفاعلي
+                  </button>
                 </div>
               </>
             )}
           </div>
           
 
+          
+          {project.analysis && (
+            <button
+              onClick={() => setShowReport(true)}
+              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 px-4 py-2 text-sm font-semibold text-white hover:shadow-lg transition-all"
+            >
+              <FileText className="h-4 w-4" />
+              عرض التقرير الشامل
+            </button>
+          )}
           
           {project.data && (
             <button
@@ -428,6 +518,11 @@ export function ProjectWorkspacePage() {
           )}
         </div>
       </div>
+      
+      {/* Report Modal */}
+      {showReport && project && (
+        <ReportModal project={project} onClose={() => setShowReport(false)} />
+      )}
     </div>
   );
 }

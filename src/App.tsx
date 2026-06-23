@@ -7,28 +7,31 @@ import { ProjectWorkspacePage } from './pages/ProjectWorkspacePage';
 import { SettingsPage } from './pages/SettingsPage';
 import { ConnectionsPage } from './pages/ConnectionsPage';
 import { ToastProvider } from './components/Toast';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 export default function App() {
   return (
     <BrowserRouter>
-      <ToastProvider>
-        <div className="min-h-screen mesh-bg">
-          <Sidebar />
-          <main className="mr-64 min-h-screen">
-            <div className="mx-auto max-w-7xl px-6 py-8">
-              <Routes>
-                <Route path="/" element={<DashboardPage />} />
-                <Route path="/projects" element={<ProjectsPage />} />
-                <Route path="/projects/new" element={<ProjectFormPage />} />
-                <Route path="/projects/:id" element={<ProjectWorkspacePage />} />
-                <Route path="/projects/:id/edit" element={<ProjectFormPage />} />
-                <Route path="/settings" element={<SettingsPage />} />
-                <Route path="/connections" element={<ConnectionsPage />} />
-              </Routes>
-            </div>
-          </main>
-        </div>
-      </ToastProvider>
+      <ErrorBoundary>
+        <ToastProvider>
+          <div className="min-h-screen mesh-bg">
+            <Sidebar />
+            <main className="mr-64 min-h-screen">
+              <div className="mx-auto max-w-7xl px-6 py-8">
+                <Routes>
+                  <Route path="/" element={<DashboardPage />} />
+                  <Route path="/projects" element={<ProjectsPage />} />
+                  <Route path="/projects/new" element={<ProjectFormPage />} />
+                  <Route path="/projects/:id" element={<ProjectWorkspacePage />} />
+                  <Route path="/projects/:id/edit" element={<ProjectFormPage />} />
+                  <Route path="/settings" element={<SettingsPage />} />
+                  <Route path="/connections" element={<ConnectionsPage />} />
+                </Routes>
+              </div>
+            </main>
+          </div>
+        </ToastProvider>
+      </ErrorBoundary>
     </BrowserRouter>
   );
 }
