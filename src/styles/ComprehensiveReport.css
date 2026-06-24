@@ -835,10 +835,43 @@
     grid-template-columns: 1fr;
   }
 
-  .table-header,
+  .table-header {
+    display: none;
+  }
+
   .table-row {
     grid-template-columns: 1fr;
     gap: 0.5rem;
+    padding: 1.25rem;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.75rem;
+    margin-bottom: 0.75rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  }
+
+  .col-name::before {
+    content: "الاسم: ";
+    font-weight: 700;
+    color: #4f46e5;
+  }
+
+  .col-type::before {
+    content: "النوع: ";
+    font-weight: 700;
+    color: #4f46e5;
+  }
+
+  .col-unique::before {
+    content: "القيم الفريدة: ";
+    font-weight: 700;
+    color: #4f46e5;
+  }
+
+  .col-null::before {
+    content: "القيم الفارغة: ";
+    font-weight: 700;
+    color: #4f46e5;
   }
 
   .cover-info {

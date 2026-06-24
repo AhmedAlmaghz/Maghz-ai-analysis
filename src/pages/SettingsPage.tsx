@@ -72,10 +72,10 @@ export function SettingsPage() {
       </div>
       
       {/* Tabs */}
-      <div className="flex gap-2 border-b border-white/10">
+      <div className="flex gap-2 border-b border-white/10 overflow-x-auto scrollbar-none flex-nowrap">
         <button
           onClick={() => setActiveTab('profile')}
-          className={`flex items-center gap-2 px-4 py-3 text-sm font-medium transition-all border-b-2 ${
+          className={`flex items-center gap-2 px-4 py-3 text-sm font-medium transition-all border-b-2 shrink-0 ${
             activeTab === 'profile'
               ? 'border-indigo-500 text-indigo-400'
               : 'border-transparent text-slate-400 hover:text-white'
@@ -86,7 +86,7 @@ export function SettingsPage() {
         </button>
         <button
           onClick={() => setActiveTab('api')}
-          className={`flex items-center gap-2 px-4 py-3 text-sm font-medium transition-all border-b-2 ${
+          className={`flex items-center gap-2 px-4 py-3 text-sm font-medium transition-all border-b-2 shrink-0 ${
             activeTab === 'api'
               ? 'border-indigo-500 text-indigo-400'
               : 'border-transparent text-slate-400 hover:text-white'
@@ -97,7 +97,7 @@ export function SettingsPage() {
         </button>
         <button
           onClick={() => setActiveTab('preferences')}
-          className={`flex items-center gap-2 px-4 py-3 text-sm font-medium transition-all border-b-2 ${
+          className={`flex items-center gap-2 px-4 py-3 text-sm font-medium transition-all border-b-2 shrink-0 ${
             activeTab === 'preferences'
               ? 'border-indigo-500 text-indigo-400'
               : 'border-transparent text-slate-400 hover:text-white'

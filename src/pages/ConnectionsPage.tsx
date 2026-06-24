@@ -404,7 +404,7 @@ function ConnectionForm({
           {/* SQL / MongoDB */}
           {(type === 'mysql' || type === 'postgres' || type === 'mongodb') && (
             <>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="mb-2 block text-sm font-semibold text-white">المضيف</label>
                   <input
@@ -441,7 +441,7 @@ function ConnectionForm({
                 />
               </div>
               
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="mb-2 block text-sm font-semibold text-white">اسم المستخدم</label>
                   <input

@@ -103,6 +103,15 @@
     background: rgba(99, 102, 241, 0.6);
   }
   
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
   .mesh-bg {
     background-color: #0f172a;
     background-image: 

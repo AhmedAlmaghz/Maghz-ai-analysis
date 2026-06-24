@@ -426,12 +426,12 @@ export function ProjectWorkspacePage() {
       
       {/* Tabs */}
       <div className="glass-dark rounded-2xl border border-white/10 shadow-xl">
-        <div className="flex items-center gap-1 border-b border-white/10 p-2">
+        <div className="flex items-center gap-1 border-b border-white/10 p-2 overflow-x-auto scrollbar-none flex-nowrap">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-all ${
+              className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-all shrink-0 ${
                 activeTab === tab.id
                   ? 'bg-gradient-to-l from-indigo-500/20 to-purple-500/20 text-white border border-white/10'
                   : 'text-slate-400 hover:bg-white/5 hover:text-white'
@@ -447,7 +447,7 @@ export function ProjectWorkspacePage() {
             <button
               onClick={handleAnalyze}
               disabled={isAnalyzing}
-              className="mr-auto flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg hover:shadow-xl disabled:opacity-50 shimmer"
+              className="mr-auto flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg hover:shadow-xl disabled:opacity-50 shimmer shrink-0"
             >
               {isAnalyzing ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -558,7 +558,7 @@ function DataTab({
     return (
       <div className="space-y-4">
         {/* Stats Bar */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <StatBadge label="الصفوف" value={project.data.rows.length.toLocaleString('ar-SA')} icon="📊" />
           <StatBadge label="الأعمدة" value={project.data.columns.length} icon="📐" />
           <StatBadge

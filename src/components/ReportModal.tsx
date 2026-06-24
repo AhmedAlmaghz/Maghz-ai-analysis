@@ -47,10 +47,10 @@ export function ReportModal({ project, onClose }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm print:bg-white print:block">
-      <div className="relative w-full max-w-5xl max-h-[90vh] overflow-hidden rounded-2xl bg-white shadow-2xl print:max-w-none print:max-h-none print:shadow-none print:rounded-none">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm print:bg-white print:block sm:p-4">
+      <div className="relative w-full max-w-5xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden rounded-none sm:rounded-2xl bg-white shadow-2xl print:max-w-none print:max-h-none print:shadow-none print:rounded-none">
         {/* Header */}
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white px-6 py-4 print:hidden">
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white px-4 sm:px-6 py-4 print:hidden">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg">
               <FileText className="h-5 w-5 text-white" />
@@ -65,10 +65,10 @@ export function ReportModal({ project, onClose }: Props) {
             {/* Print Button */}
             <button
               onClick={handlePrint}
-              className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+              className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 sm:px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
             >
               <Printer className="h-4 w-4" />
-              طباعة
+              <span className="hidden sm:inline">طباعة</span>
             </button>
 
             {/* Export Dropdown */}
@@ -76,10 +76,10 @@ export function ReportModal({ project, onClose }: Props) {
               <button
                 onClick={() => setShowExport(!showExport)}
                 disabled={isExporting}
-                className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 px-4 py-2 text-sm font-medium text-white hover:shadow-lg transition-all disabled:opacity-50"
+                className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 px-3 sm:px-4 py-2 text-sm font-medium text-white hover:shadow-lg transition-all disabled:opacity-50"
               >
                 <Download className="h-4 w-4" />
-                تصدير
+                <span className="hidden sm:inline">تصدير</span>
               </button>
 
               {showExport && (
@@ -126,7 +126,7 @@ export function ReportModal({ project, onClose }: Props) {
         </div>
 
         {/* Report Content */}
-        <div className="overflow-y-auto max-h-[calc(90vh-80px)] print:max-h-none print:overflow-visible">
+        <div className="overflow-y-auto max-h-[calc(95vh-80px)] sm:max-h-[calc(90vh-80px)] print:max-h-none print:overflow-visible">
           <ComprehensiveReport project={project} />
         </div>
       </div>
