@@ -1,6 +1,7 @@
 import type { ParsedData } from './dataParser';
 import { buildDataSummary } from './dataParser';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GEMINI_MODEL, extractJsonObject, withRetry, friendlyAIError } from './aiConfig';
 
 export type ChartTypeString =
   | 'bar' | 'horizontal-bar' | 'line' | 'area' | 'pie' | 'donut'
@@ -42,7 +43,7 @@ export async function chatWithData(
   history: ChatMessage[] = []
 ): Promise<ChatResponse> {
   const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({ model: 'gemini-3.1-flash-lite' });
+  const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
 
   const dataSummary = buildDataSummary(data);
 
@@ -149,17 +150,18 @@ ${historyContext}
   ]
 }`;
 
-  const result = await model.generateContent(prompt);
-  const response = await result.response;
-  const text = response.text().trim();
-
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) {
-    return { text, visualizations: [], suggestions: [] };
-  }
-
   try {
-    const parsed = JSON.parse(jsonMatch[0]);
+    const text = await withRetry(async () => {
+      const result = await model.generateContent(prompt);
+      return result.response.text().trim();
+    });
+
+    const jsonStr = extractJsonObject(text);
+    if (!jsonStr) {
+      return { text, visualizations: [], suggestions: [] };
+    }
+
+    const parsed = JSON.parse(jsonStr);
 
     // Validate and sanitize visualizations
     const validTypes = [
@@ -192,13 +194,14 @@ ${historyContext}
           .slice(0, 4)
           .map((s: string) => s.trim())
       : [];
-    
+
     return {
       text: parsed.text || text,
       visualizations,
       suggestions,
     };
-  } catch {
-    return { text: text.replace(/```json\n?|```/g, '').trim(), visualizations: [], suggestions: [] };
+  } catch (err) {
+    // Re-throw with a friendly Arabic message for UI display
+    throw new Error(friendlyAIError(err));
   }
 }

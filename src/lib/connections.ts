@@ -1,6 +1,6 @@
 import type { DBConnection } from './storage';
 import type { ParsedData, DataRow } from './dataParser';
-import { parseTextData } from './dataParser';
+import { parseTextData, buildParsedData } from './dataParser';
 
 // Test database connection
 export async function testConnection(conn: DBConnection): Promise<{ success: boolean; message: string }> {
@@ -112,13 +112,7 @@ export async function fetchDataFromConnection(conn: DBConnection): Promise<Parse
         throw new Error('لم يتم العثور على بيانات');
       }
       
-      const headers = Object.keys(rows[0]);
-      
-      return {
-        headers,
-        rows,
-        columns: [],
-      };
+      return buildParsedData(rows);
     }
     
     if (conn.type === 'graphql') {
@@ -163,13 +157,7 @@ export async function fetchDataFromConnection(conn: DBConnection): Promise<Parse
         throw new Error('لم يتم العثور على بيانات');
       }
       
-      const headers = Object.keys(rows[0]);
-      
-      return {
-        headers,
-        rows,
-        columns: [],
-      };
+      return buildParsedData(rows);
     }
     
     throw new Error('نوع الاتصال غير مدعوم للاستيراد المباشر');

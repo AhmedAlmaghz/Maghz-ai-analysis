@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Menu, Sparkles } from 'lucide-react';
 import { Sidebar } from './components/Sidebar';
@@ -10,9 +10,43 @@ import { SettingsPage } from './pages/SettingsPage';
 import { ConnectionsPage } from './pages/ConnectionsPage';
 import { ToastProvider } from './components/Toast';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { getSettings } from './lib/storage';
+
+/** Apply language & directionality to the <html> element. */
+function applyLanguage(lang: 'ar' | 'en') {
+  const html = document.documentElement;
+  html.setAttribute('lang', lang);
+  html.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+  // Swap font family so Latin text gets a proper sans-serif on 'en' mode.
+  html.style.setProperty(
+    '--font-body',
+    lang === 'ar'
+      ? "'Cairo', 'Tajawal', system-ui, sans-serif"
+      : "'Inter', system-ui, sans-serif"
+  );
+}
 
 export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Load language preference once on mount and re-apply whenever settings change.
+  useEffect(() => {
+    async function syncLang() {
+      const s = await getSettings();
+      applyLanguage(s.language ?? 'ar');
+    }
+    syncLang();
+
+    // Re-sync when the SettingsPage auto-saves (IndexedDB doesn't fire storage
+    // events cross-tab, but within the same tab we can poll on focus or use a
+    // custom event dispatched by SettingsPage).
+    const handleLangChange = (e: Event) => {
+      const lang = (e as CustomEvent<'ar' | 'en'>).detail;
+      if (lang) applyLanguage(lang);
+    };
+    window.addEventListener('app:language-change', handleLangChange);
+    return () => window.removeEventListener('app:language-change', handleLangChange);
+  }, []);
 
   return (
     <BrowserRouter>

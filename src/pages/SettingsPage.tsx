@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Save, User, Key, Palette } from 'lucide-react';
+import { Save, User, Key, Palette, Globe } from 'lucide-react';
 import { getSettings, saveSettings, getProfile, saveProfile } from '../lib/storage';
 import type { AppSettings, UserProfile } from '../lib/storage';
 import { useToast } from '../components/Toast';
@@ -39,6 +39,13 @@ export function SettingsPage() {
     }, 500);
     return () => clearTimeout(timer);
   }, [settings]);
+
+  // Notify App.tsx immediately when the language changes so dir/lang update
+  // without a page reload.
+  const handleLanguageChange = (lang: 'ar' | 'en') => {
+    setSettings((prev) => prev ? { ...prev, language: lang } : prev);
+    window.dispatchEvent(new CustomEvent('app:language-change', { detail: lang }));
+  };
   
   const handleSaveProfile = async () => {
     if (!profile) return;
@@ -275,6 +282,39 @@ export function SettingsPage() {
             </button>
           </div>
           
+          {/* Language */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Globe className="h-5 w-5 text-indigo-400" />
+              <div>
+                <p className="font-medium text-white">اللغة / Language</p>
+                <p className="text-sm text-slate-400">تغيير اتجاه واجهة التطبيق</p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => handleLanguageChange('ar')}
+                className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
+                  settings.language === 'ar'
+                    ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/30'
+                    : 'bg-white/5 text-slate-400 hover:text-white border border-white/10'
+                }`}
+              >
+                العربية
+              </button>
+              <button
+                onClick={() => handleLanguageChange('en')}
+                className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
+                  settings.language === 'en'
+                    ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/30'
+                    : 'bg-white/5 text-slate-400 hover:text-white border border-white/10'
+                }`}
+              >
+                English
+              </button>
+            </div>
+          </div>
+
           {/* Default Chart */}
           <div>
             <label className="mb-2 block text-sm font-semibold text-white">نوع الرسم الافتراضي</label>

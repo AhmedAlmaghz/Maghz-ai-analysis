@@ -1,6 +1,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import type { ParsedData } from './dataParser';
 import { buildDataSummary } from './dataParser';
+import { GEMINI_MODEL, extractJsonObject, withRetry, friendlyAIError } from './aiConfig';
 
 export interface AIAnalysis {
   summary: string;
@@ -18,10 +19,10 @@ export async function analyzeWithGemini(
   userQuestion?: string
 ): Promise<AIAnalysis> {
   const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({ model: 'gemini-3.1-flash-lite' });
-  
+  const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
+
   const dataSummary = buildDataSummary(data);
-  
+
   const prompt = `أنت محلل بيانات ذكي وخبير ذكاء أعمال محترف. لدي البيانات التالية، قم بتحليلها بعمق واستخراج رؤى قيمة.
 
 ${dataSummary}
@@ -51,18 +52,19 @@ ${userQuestion ? `\nسؤال/طلب المستخدم: ${userQuestion}\n` : ''}
 - حدد الاتجاهات (trends) والشذوذ (anomalies) بوضوح
 - التنبؤات يجب أن تكون واقعية ومدعومة بالأنماط الموجودة في البيانات`;
 
-  const result = await model.generateContent(prompt);
-  const response = await result.response;
-  const text = response.text().trim();
-  
-  // Extract JSON from response
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) {
-    throw new Error('فشل في استخراج JSON من استجابة الذكاء الاصطناعي');
-  }
-  
   try {
-    const parsed = JSON.parse(jsonMatch[0]);
+    const text = await withRetry(async () => {
+      const result = await model.generateContent(prompt);
+      return result.response.text().trim();
+    });
+
+    // Extract JSON from response (handles markdown fences and surrounding prose)
+    const jsonStr = extractJsonObject(text);
+    if (!jsonStr) {
+      throw new Error('فشل في استخراج JSON من استجابة الذكاء الاصطناعي');
+    }
+
+    const parsed = JSON.parse(jsonStr);
     return {
       summary: parsed.summary || '',
       insights: parsed.insights || [],
@@ -72,8 +74,8 @@ ${userQuestion ? `\nسؤال/طلب المستخدم: ${userQuestion}\n` : ''}
       recommendations: parsed.recommendations || [],
       kpis: parsed.kpis || [],
     };
-  } catch (e) {
-    throw new Error('فشل في تحليل استجابة الذكاء الاصطناعي: ' + (e as Error).message);
+  } catch (err) {
+    throw new Error(friendlyAIError(err));
   }
 }
 
@@ -83,10 +85,10 @@ export async function askAboutData(
   question: string
 ): Promise<string> {
   const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({ model: 'gemini-3.1-flash-lite' });
-  
+  const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
+
   const dataSummary = buildDataSummary(data);
-  
+
   const prompt = `أنت مساعد ذكاء أعمال محترف. بناءً على البيانات التالية:
 
 ${dataSummary}
@@ -95,7 +97,12 @@ ${dataSummary}
 
 السؤال: ${question}`;
 
-  const result = await model.generateContent(prompt);
-  const response = await result.response;
-  return response.text().trim();
+  try {
+    return await withRetry(async () => {
+      const result = await model.generateContent(prompt);
+      return result.response.text().trim();
+    });
+  } catch (err) {
+    throw new Error(friendlyAIError(err));
+  }
 }

@@ -8,7 +8,7 @@
   <img src="https://img.shields.io/badge/React-19.2.6-61DAFB?style=for-the-badge&logo=react&logoColor=white" alt="React">
   <img src="https://img.shields.io/badge/TypeScript-5.9.3-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript">
   <img src="https://img.shields.io/badge/Tailwind_CSS-4.1.17-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind">
-  <img src="https://img.shields.io/badge/Gemini_AI-3.1_Flash-4285F4?style=for-the-badge&logo=google&logoColor=white" alt="Gemini">
+  <img src="https://img.shields.io/badge/Gemini_AI-2.0_Flash_Lite-4285F4?style=for-the-badge&logo=google&logoColor=white" alt="Gemini">
   <img src="https://img.shields.io/badge/Vite-7.3.2-646CFF?style=for-the-badge&logo=vite&logoColor=white" alt="Vite">
 </p>
 
@@ -51,7 +51,7 @@
 - 🔍 تحليل تلقائي لأنواع الأعمدة والإحصائيات
 - 📈 تصورات بيانية تفاعلية (Bar, Line, Pie, Area Charts)
 
-### 🤖 **الذكاء الاصطناعي (Gemini 3.1 Flash Lite)**
+### 🤖 **الذكاء الاصطناعي (Gemini 2.0 Flash Lite)**
 - 💡 استخراج الرؤى الرئيسية تلقائياً
 - 📊 توليد مؤشرات الأداء (KPIs) الذكية
 - 📈 تحليل الاتجاهات والأنماط

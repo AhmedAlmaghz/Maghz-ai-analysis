@@ -75,8 +75,16 @@ export async function parseCSVFile(file: File): Promise<ParsedData> {
   });
 }
 
+// Build a ParsedData object from already-structured rows (e.g. API/JSON results).
+// Ensures column analysis runs so AI summaries and charts work on imported data.
+export function buildParsedData(rows: DataRow[]): ParsedData {
+  const headers = rows.length > 0 ? Object.keys(rows[0]) : [];
+  const columns = analyzeColumns(headers, rows);
+  return { headers, rows, columns };
+}
+
 // Analyze column types and stats
-function analyzeColumns(headers: string[], rows: DataRow[]): ColumnInfo[] {
+export function analyzeColumns(headers: string[], rows: DataRow[]): ColumnInfo[] {
   return headers.map((header) => {
     const values = rows.map((r) => r[header]);
     const nonNull = values.filter((v) => v !== null && v !== undefined && v !== '');
@@ -117,16 +125,41 @@ function analyzeColumns(headers: string[], rows: DataRow[]): ColumnInfo[] {
   });
 }
 
+// Patterns that strongly indicate a date/datetime string.
+const DATE_PATTERNS = [
+  // ISO 8601: 2024-01-15, 2024-01-15T10:30:00, 2024-01-15T10:30:00Z
+  /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2})?(\.\d+)?(Z|[+-]\d{2}:?\d{2})?)?$/,
+  // DD/MM/YYYY or MM/DD/YYYY or DD-MM-YYYY
+  /^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}$/,
+  // Month name: Jan 2024, January 15 2024, 15 Jan 2024
+  /^(\d{1,2}\s+)?(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+\d{1,2}(,?\s+\d{2,4})?$/i,
+  // Year-Month: 2024-01, 2024/01
+  /^\d{4}[\/\-]\d{2}$/,
+  // Quarter: Q1 2024, 2024-Q3
+  /^(Q[1-4]\s*\d{4}|\d{4}\s*-?\s*Q[1-4])$/i,
+];
+
 function isDateColumn(values: (string | number | null)[]): boolean {
   if (values.length === 0) return false;
-  const sample = values.slice(0, 10);
+  // Sample up to 20 values for better accuracy
+  const sample = values.slice(0, 20);
   let dateCount = 0;
   for (const v of sample) {
     if (typeof v === 'number') continue;
-    const s = String(v);
-    if (/^\d{4}-\d{2}-\d{2}|^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}/.test(s)) {
+    const s = String(v).trim();
+    if (!s) continue;
+    const matchesPattern = DATE_PATTERNS.some((re) => re.test(s));
+    if (matchesPattern) {
       const d = new Date(s);
-      if (!isNaN(d.getTime())) dateCount++;
+      if (!isNaN(d.getTime())) {
+        dateCount++;
+        continue;
+      }
+    }
+    // Fallback: try parsing directly (catches locale-specific formats)
+    const d = new Date(s);
+    if (!isNaN(d.getTime()) && s.length >= 6) {
+      dateCount++;
     }
   }
   return dateCount > sample.length * 0.5;
